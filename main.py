@@ -1,7 +1,10 @@
 from urllib.parse import urlencode
 import requests
 
-GOOGLE_API_KEY = "AIzaSyCI6jyORBIefZtyRCQoNR144dKT9KMXoVA"
+#API key
+api_file = open("api_key", "r")
+GOOGLE_API_KEY = api_file.read()
+api_file.close()
 
 work_place_address = "Zaułek Rogoziński 145 51-116 Wroclaw Poland"
 
