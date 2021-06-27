@@ -1,22 +1,23 @@
-import googlemaps
+from urllib.parse import urlencode
+import requests
 
 API_KEY = "AIzaSyCI6jyORBIefZtyRCQoNR144dKT9KMXoVA"
 
-map_client = googlemaps.Client(API_KEY)
+work_place_address = "Zaułek Rogoziński 145 51-116 Wroclaw Poland"
 
-work_place_address = "Rybacka 9 53-656 Wroclaw Poland"
+def extract_lat_lng(address, data_format = "json"):
+    endpoint = f"https://maps.googleapis.com/maps/api/geocode/{data_format}"
+    params = {"address": address, "key": API_KEY}
+    url_params = urlencode(params)
+    url = f"{endpoint}?{url_params}"
+    r = requests.get(url)
+    if r.status_code not in range(200,299):
+        return {}
+    latlng = {}
+    try:
+        latlng = r.json()["results"][0]["geometry"]["location"]
+    except:
+        pass
+    return latlng.get("lat"), latlng.get("lng")
 
-response = map_client.geocode(work_place_address)
-print(response[0]['geometry']['location']['lat'])
-print(response[0]['geometry']['location']['lng'])
-
-
-
-#def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
- #   print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-#if __name__ == '__main__':
-#    print_hi('PyCharm')
+print(extract_lat_lng(work_place_address))
