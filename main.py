@@ -1,13 +1,37 @@
 from urllib.parse import urlencode
 import requests
+import mysql.connector
 
 #API key
 api_file = open("api_key", "r")
 GOOGLE_API_KEY = api_file.read()
 api_file.close()
 
-work_place_address = "Zaułek Rogoziński 145 51-116 Wroclaw Poland"
+#Konwerter tupli na string
+def convertTuple(tup):
+    str = ' '.join(tup)
+    return str
 
+#MySQL
+mydb = mysql.connector.connect(
+    host="localhost",
+    user="root",#input("Wprowadz login: "),
+    password="xsw2!QAZ",#input("Wprowadz haslo: "),
+    database="system_kurierski"
+)
+
+mycursor = mydb.cursor()
+
+mycursor.execute("SELECT ulica, nr_ulica, kod_pocztowy, miasto, kraj FROM adresy")
+
+myresult = mycursor.fetchall()
+
+adresy = []
+
+for x in myresult:
+  adresy.append(convertTuple(x))
+
+#GoogleMaps Client
 class GoogleMapsClient(object):
     lat = lng = None
     data_format = "json"
@@ -41,6 +65,22 @@ class GoogleMapsClient(object):
         self.lng = lng
         return lat, lng
 
-client = GoogleMapsClient(api_key=GOOGLE_API_KEY, address=work_place_address)
+    def next_travel_time(self, next_location):
+        endpoint = f"https://maps.googleapis.com/maps/api/distancematrix/{self.data_format}"
+        params = f"origins={self.lat},{self.lng}&destinations={next_location.lat},{next_location.lng}&key={self.api_key}"
+        url = f"{endpoint}?{params}"
+        r = requests.get(url)
+        if r.status_code not in range(200,299):
+            return {}
+        time = r.json()['rows'][0]['elements'][0]['duration']['text']
+        distance = r.json()['rows'][0]['elements'][0]['distance']['text']
+        return time, distance
 
-print(client.lat, client.lng)
+client = GoogleMapsClient(api_key=GOOGLE_API_KEY, address=adresy[0])
+client2 = GoogleMapsClient(api_key=GOOGLE_API_KEY, address=adresy[6])
+
+print(client.next_travel_time(client2))
+
+# print(client.lat, client.lng)
+# print(client2.lat, client2.lng)
+
