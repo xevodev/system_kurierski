@@ -8,28 +8,34 @@ GOOGLE_API_KEY = api_file.read()
 api_file.close()
 
 #Konwerter tupli na string
-def convertTuple(tup):
+def convert_tuple(tup):
     str = ' '.join(tup)
     return str
 
-#MySQL
-mydb = mysql.connector.connect(
-    host="localhost",
-    user="root",#input("Wprowadz login: "),
-    password="xsw2!QAZ",#input("Wprowadz haslo: "),
-    database="system_kurierski"
-)
+def extract_addresses_from_database():
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",#input("Wprowadz login: "),
+        password="xsw2!QAZ",#input("Wprowadz haslo: "),
+        database="system_kurierski"
+    )
 
-mycursor = mydb.cursor()
+    print("Pobieranie adresow z bazy danych...")
 
-mycursor.execute("SELECT ulica, nr_ulica, kod_pocztowy, miasto, kraj FROM adresy")
+    mycursor = mydb.cursor()
 
-myresult = mycursor.fetchall()
+    mycursor.execute("SELECT ulica, nr_ulica, kod_pocztowy, miasto, kraj FROM adresy")
 
-adresy = []
+    myresult = mycursor.fetchall()
 
-for x in myresult:
-  adresy.append(convertTuple(x))
+    data = []
+
+    for x in myresult:
+      data.append(convert_tuple(x))
+
+    print("Pobrano adresy \u2713")
+
+    return data
 
 #GoogleMaps Client
 class GoogleMapsClient(object):
@@ -76,11 +82,24 @@ class GoogleMapsClient(object):
         distance = r.json()['rows'][0]['elements'][0]['distance']['text']
         return time, distance
 
-client = GoogleMapsClient(api_key=GOOGLE_API_KEY, address=adresy[0])
-client2 = GoogleMapsClient(api_key=GOOGLE_API_KEY, address=adresy[6])
+def object_creation(data):
+    clients = []
+    for i in range(len(data)):
+        tmp = GoogleMapsClient(api_key=GOOGLE_API_KEY, address=data[i])
+        clients.append(tmp)
+    return clients
 
-print(client.next_travel_time(client2))
+def main():
+    print("System kurierski v0.1")
+    print("----------------------------------")
+    adresy = extract_addresses_from_database()
+    locations = object_creation(adresy)
+    print("----------------------------------")
+    print(f"Adres poczatkowy: {locations[0].location_query}")
+    for i in range(len(locations)-1):
+        print(locations[i+1].location_query)
 
-# print(client.lat, client.lng)
-# print(client2.lat, client2.lng)
 
+
+if __name__ == "__main__":
+    main()
